@@ -11,7 +11,7 @@ function combined_table = AppendTables(varargin)
 
     if j == numel(varargin)
         if isempty(varargin{j})
-            combined_table = [];
+            combined_table = table();
         end
         return
     end

@@ -1,23 +1,31 @@
-classdef CurrentProbe < connection
+classdef CurrentProbe < Connection
     properties
         Data
         ConvertFactor
         SCPI
+        unit
     end
 
     methods
         function obj = CurrentProbe(Adress,Name,ConvertFactor)
             arguments
                 Adress double 
-                Name string = "I"
-                ConvertFactor = 10
+                Name string
+                ConvertFactor double
             end
 
-%             obj.ConvertFactor = ConvertFactor;
-            % call the connection constructor
+            % Call the connection constructor
             superArgs{1} = Adress;
             superArgs{2} = Name;        
-            obj@connection(superArgs{:})
+            obj@Connection(superArgs{:})
+
+            % Populate properties
+            obj.SCPI = "SENS:DATA?";
+            obj.unit = "A";
+    
+            % Fill in as (A/v)
+            obj.ConvertFactor = ConvertFactor;
+            
         end
     end
 end

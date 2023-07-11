@@ -1,4 +1,4 @@
-classdef VoltageProbe < connection
+classdef VoltageProbe < Connection
     properties
         Data
         error
@@ -6,24 +6,26 @@ classdef VoltageProbe < connection
         Distance
         Gain
         SCPI
+        RemoveCharFromOutput
         unit
     end
     methods
-        function obj = VoltageProbe(Adress,Name,Points,Distance,Gain,unit,SCPI)
+        function obj = VoltageProbe(Adress,Name,Distance,Gain,Points,unit,SCPI,RemoveCharFromOutput)
             arguments
-                Adress = 1
-                Name = 1
-                Points = 3;
-                Distance = 1;
-                Gain = 1;
+                Adress (1,1) double
+                Name (1,1) string
+                Distance (1,1) double = 1;
+                Gain (1,1) double = 1;
+                Points (1,1) double = 3;
                 unit string = "uV/m";
                 SCPI string = 'SENS:DATA?';
+                RemoveCharFromOutput string = "";
             end
 
             % call the connection constructor
             superArgs{1} = Adress;
             superArgs{2} = Name;        
-            obj@connection(superArgs{:})
+            obj@Connection(superArgs{:})
             
             % set values specific to Voltage probe constructor
             obj.Points = Points;
@@ -31,7 +33,13 @@ classdef VoltageProbe < connection
             obj.Gain = Gain;
             obj.SCPI = SCPI;
             obj.unit = unit;
-
+            obj.RemoveCharFromOutput = RemoveCharFromOutput;
         end           
     end
+
+      
+
+
+
 end
+

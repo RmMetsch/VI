@@ -1,4 +1,4 @@
-classdef TempProbe < connection
+classdef TempProbe < Connection
     properties
         Data
         error
@@ -10,8 +10,8 @@ classdef TempProbe < connection
         function obj = TempProbe(Adress,Name,Points,unit,SCPI)
 
             arguments
-                Adress = 1
-                Name   = 1
+                Adress double
+                Name string
                 Points = 1;
                 unit string = "K";
                 SCPI string = 'SENS:DATA?';
@@ -20,7 +20,7 @@ classdef TempProbe < connection
             % call the connection constructor
             superArgs{1} = Adress;
             superArgs{2} = Name;        
-            obj@connection(superArgs{:})
+            obj@Connection(superArgs{:})
             
             % set values specific to Voltage probe constructor
             obj.Points = Points;
