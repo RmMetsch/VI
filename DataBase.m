@@ -96,18 +96,20 @@ classdef DataBase < handle
                 DataSet cell
                 setName (1,1) string 
                 Vars string
-                opt.filter double
+                opt.filter double 
             end
+
             
             % Extract data from DataSet cell array
             TempTable = table();
-            for i = opt.filter
+            for i = 1:numel(DataSet)
                 TempTable(:,i) =  array2table(DataSet{i}.Data);
                 TempTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
             end
+                        
             
             % populate DataSets
-            DataBase.DataSets{setName,"Data"} = {TempTable};
+            DataBase.DataSets{setName,"Data"} = {TempTable(opt.filter)};
             DataBase.DataSets{setName,"Date"} = datetime();
             DataBase.DataSets{setName,"Opperator"} = DataBase.DataSets{1,"Opperator"};
             
@@ -123,9 +125,14 @@ classdef DataBase < handle
             RawTotal = [{TempTable} {DataSet(opt.filter)} {Vars} {DataSet}];
             % Populate RawData table
             DataBase.RawData{setName,:} = [{TempTable} {DataSet(opt.filter)} {Vars} {DataSet}];
+            
             % Save raw data for archiving
-%             save(string(datetime)+" "+setName ,"RawTotal")
- 
+            save(string(datetime("today"))+" "+setName +"_Raw","RawTotal")
+            writetable(TempTable,datetime("today")+" "+setName)
+                
+        
+
+
         end
 
         function RenameSets(DataBase,opt)
