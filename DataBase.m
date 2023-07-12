@@ -35,18 +35,22 @@ classdef DataBase < handle
             % get correct data structures and names
             VarTypes = ["cell","string","string"];
             VarNames = ["Data","Date","Opperator"];
+            
             % prealocate table of correct size
             obj.DataSets = table(Size = [1 numel(VarTypes)], VariableTypes = VarTypes, VariableNames = VarNames);
-            % make temp table which will hold the Data from the connections, and input the values of the dataset into the
-            % TempTable.
-            TempTable = table();
-            for i = opt.filter
-                TempTable(:,i) =  array2table(DataSet{i}.Data);
-                TempTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
+            
+            % make DataTable which will hold the Data from the connections, and input the values of the dataset into the
+            DataTable = table();
+            for i = numel(DataSet)
+                DataTable(:,i) =  array2table(DataSet{i}.Data);
+                DataTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
             end
+            % write to csv
+            writetable(DataTable,datetime("today")+" "+setName,WriteMode="append")
+    
             % put the TempTable as a cell into the DataBase allong with
             % some other stuff
-            obj.DataSets.Data(end) = {TempTable};
+            obj.DataSets.Data(end) = {DataTable(opt.filter)};
             obj.DataSets.Date(end) = datetime();
             obj.DataSets.Opperator(end) = "Roel";
             obj.DataSets.Properties.RowNames = setName;
@@ -73,9 +77,10 @@ classdef DataBase < handle
             
             % expand RawData to include more information at first glance
             obj.RawData = table(Size = [1 4],VariableTypes = repmat("cell",1,4),VariableNames = ["FilteredData","FilteredProbes","Vars","RawData"]);
-            obj.RawData{setName,:} = [{TempTable} {DataSet([opt.filter])}  {Vars} {DataSet}];
+            obj.RawData{setName,:} = [{DataTable(opt.filter)} {DataSet(opt.filter)}  {Vars} {DataSet}];
             obj.RawData("Row1",:) = [];
             
+            RawTotal = [{DataTable} {Vars} {DataSet}]; 
             %% initialize the rest of the Fields as tables
             obj.n  = table();
             obj.Ic = table();
@@ -84,8 +89,7 @@ classdef DataBase < handle
             obj.Name = DBName;      
             
             % save Raw data to csv file
-            
-%             save(string(datetime)+" "+setName ,[{TempTable} {DataSet([opt.filter])}  {Vars} {DataSet}])
+            save(string(datetime("today"))+" "+setName +"_Raw","RawTotal")
             
 
         end
@@ -101,15 +105,14 @@ classdef DataBase < handle
 
             
             % Extract data from DataSet cell array
-            TempTable = table();
+            DataTable = table();
             for i = 1:numel(DataSet)
-                TempTable(:,i) =  array2table(DataSet{i}.Data);
-                TempTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
+                DataTable(:,i) =  array2table(DataSet{i}.Data);
+                DataTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
             end
                         
-            
             % populate DataSets
-            DataBase.DataSets{setName,"Data"} = {TempTable(opt.filter)};
+            DataBase.DataSets{setName,"Data"} = {DataTable(opt.filter)};
             DataBase.DataSets{setName,"Date"} = datetime();
             DataBase.DataSets{setName,"Opperator"} = DataBase.DataSets{1,"Opperator"};
             
@@ -120,19 +123,15 @@ classdef DataBase < handle
                 DataBase.Vars{setName,var(i)} = vals(i);
             end
             
-
             % Raw data cell
-            RawTotal = [{TempTable} {DataSet(opt.filter)} {Vars} {DataSet}];
+            RawTotal = [{DataTable} {Vars} {DataSet}];
             % Populate RawData table
-            DataBase.RawData{setName,:} = [{TempTable} {DataSet(opt.filter)} {Vars} {DataSet}];
+            DataBase.RawData{setName,:} = [{DataTable(opt.filter)} {DataSet(opt.filter)} {Vars} {DataSet}];
             
             % Save raw data for archiving
             save(string(datetime("today"))+" "+setName +"_Raw","RawTotal")
-            writetable(TempTable,datetime("today")+" "+setName)
+            writetable(DataTable,datetime("today")+" "+setName)
                 
-        
-
-
         end
 
         function RenameSets(DataBase,opt)
