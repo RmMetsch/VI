@@ -4,17 +4,16 @@ classdef TempProbe < Connection
         error
         Points
         SCPI
-        unit
+        Channel
+        Unit
     end
     methods
-        function obj = TempProbe(Adress,Name,Points,unit,SCPI)
+        function obj = TempProbe(Adress,Name,Channel)
 
             arguments
                 Adress double
                 Name string
-                Points = 1;
-                unit string = "K";
-                SCPI string = 'SENS:DATA?';
+                Channel string = "A"
             end
             
             % call the connection constructor
@@ -23,10 +22,13 @@ classdef TempProbe < Connection
             obj@Connection(superArgs{:})
             
             % set values specific to Voltage probe constructor
-            obj.Points = Points;
-            obj.SCPI = SCPI;
-            obj.unit = unit;
+            obj.Unit = "K";
+            obj.Channel = Channel;
+            obj.Data = [];
+
+            Configure(obj)
 
         end           
     end
 end
+

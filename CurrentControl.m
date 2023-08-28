@@ -19,16 +19,27 @@ classdef CurrentControl < Connection
             obj@Connection(superArgs{:})
             
             obj.ConvertFactor = ConvertFactor;
-            obj.SCPI = "SOUR:VOLT";
             obj.Unit = "A";
             obj.Data = [];
 
+            Configure(obj)
+
+
         end
 
-        function set(obj,I)
+        function Set(obj,I)
             write(obj.Instr,strcat(obj.SCPI," ",string(obj.ConvertFactor*I)))
             obj.Data(end+1) = I;
+            pause(1)
         end
 
+        function Output(obj,status)
+            arguments
+                obj CurrentControl
+                status string
+            end
+            write(obj.Instr,strcat("OUTP ", status))
+        end
+        
     end
 end

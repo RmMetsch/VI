@@ -3,7 +3,7 @@ classdef CurrentProbe < Connection
         Data
         ConvertFactor
         SCPI
-        unit
+        Unit
     end
 
     methods
@@ -20,11 +20,12 @@ classdef CurrentProbe < Connection
             obj@Connection(superArgs{:})
 
             % Populate properties
-            obj.SCPI = "SENS:DATA?";
-            obj.unit = "A";
-    
+            obj.Unit = "A";
+            
             % Fill in as (A/v)
             obj.ConvertFactor = ConvertFactor;
+            
+            Configure(obj)
             
         end
     end

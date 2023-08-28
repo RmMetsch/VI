@@ -28,29 +28,43 @@ classdef DataBase < handle
             if isempty(DataSet)
                 return
             end
+
             % turn off this stupid warning
             warning("off",'MATLAB:table:RowsAddedExistingVars')
             
             %% populate the DataSet Field with the provided DataSet 
             % get correct data structures and names
-            VarTypes = ["cell","string","string"];
-            VarNames = ["Data","Date","Opperator"];
+            VarTypes = ["cell","string","string","string"];
+            VarNames = ["Data","Date","Opperator","Comments"];
             
             % prealocate table of correct size
             obj.DataSets = table(Size = [1 numel(VarTypes)], VariableTypes = VarTypes, VariableNames = VarNames);
             
             % make DataTable which will hold the Data from the connections, and input the values of the dataset into the
-            DataTable = table();
-            for i = numel(DataSet)
-                DataTable(:,i) =  array2table(DataSet{i}.Data);
-                DataTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
+             
+            SSL = inf;              % SSL = ShortestSetLenght
+            for i = 1:numel(DataSet)
+                if SSL > Height(DataSet{i}.Data)
+                    SSL = Height(DataSet{i}.Data);
+                end
             end
+            
+            DataTable = [];
+            HeaderArray = [];
+            for i = 1:numel(DataSet)
+                DataTable = [DataTable DataSet{i}.Data(1:SSL)];
+                HeaderArray = [HeaderArray DataSet{i}.Name];
+            end
+  
+
+            DataTable = array2table(DataTable,VariableNames=HeaderArray);
+
             % write to csv
-            writetable(DataTable,datetime("today")+" "+setName,WriteMode="append")
-    
+            writetable(DataTable,string(datetime("today"))+" "+setName,WriteMode="append")
+            
             % put the TempTable as a cell into the DataBase allong with
             % some other stuff
-            obj.DataSets.Data(end) = {DataTable(opt.filter)};
+            obj.DataSets.Data(end) = {DataTable(:,opt.filter)};
             obj.DataSets.Date(end) = datetime();
             obj.DataSets.Opperator(end) = "Roel";
             obj.DataSets.Properties.RowNames = setName;
@@ -76,11 +90,12 @@ classdef DataBase < handle
             end
             
             % expand RawData to include more information at first glance
-            obj.RawData = table(Size = [1 4],VariableTypes = repmat("cell",1,4),VariableNames = ["FilteredData","FilteredProbes","Vars","RawData"]);
-            obj.RawData{setName,:} = [{DataTable(opt.filter)} {DataSet(opt.filter)}  {Vars} {DataSet}];
+            obj.RawData = table(Size = [1 4],VariableTypes = repmat("cell",1,4),VariableNames = ["Data","FilteredProbes","Vars","RawData"]);
+            obj.RawData{setName,:} = [{DataTable} {DataSet}  {Vars} {DataSet}];
             obj.RawData("Row1",:) = [];
-            
-            RawTotal = [{DataTable} {Vars} {DataSet}]; 
+           
+            RawTotal = [{DataSet},{setName},{Vars}]; 
+
             %% initialize the rest of the Fields as tables
             obj.n  = table();
             obj.Ic = table();
@@ -100,19 +115,40 @@ classdef DataBase < handle
                 DataSet cell
                 setName (1,1) string 
                 Vars string
-                opt.filter double 
+                opt.filter double = 1:numel(DataSet)
             end
+            
+            if any(string(DataBase.DataSets.Properties.RowNames) == setName)
+            
+                disp("SetName already used, please name set differently")
+                return
+            end
+            
 
             
+            
             % Extract data from DataSet cell array
-            DataTable = table();
+            % make DataTable which will hold the Data from the connections, and input the values of the dataset into the
+            DataTable = [];
+            HeaderArray = [];
+
+            SSL = inf;              % SSL = ShortestSetLenght
             for i = 1:numel(DataSet)
-                DataTable(:,i) =  array2table(DataSet{i}.Data);
-                DataTable.Properties.VariableNames(i) = string(DataSet{i}.Name);
+                if SSL > height(DataSet{i}.Data)
+                    SSL = height(DataSet{i}.Data);
+                end
             end
-                        
+
+            for i = 1:numel(DataSet)
+                DataTable = [DataTable DataSet{i}.Data(1:SSL)];
+                HeaderArray = [HeaderArray DataSet{i}.Name];
+            end
+            DataTable = array2table(DataTable,VariableNames=HeaderArray);
+
+            writetable(DataTable,string(datetime("today"))+" "+setName,WriteMode="append")
+
             % populate DataSets
-            DataBase.DataSets{setName,"Data"} = {DataTable(opt.filter)};
+            DataBase.DataSets{setName,"Data"} = {DataTable(:,opt.filter)};
             DataBase.DataSets{setName,"Date"} = datetime();
             DataBase.DataSets{setName,"Opperator"} = DataBase.DataSets{1,"Opperator"};
             
@@ -124,71 +160,49 @@ classdef DataBase < handle
             end
             
             % Raw data cell
-            RawTotal = [{DataTable} {Vars} {DataSet}];
+            RawTotal = [{DataSet},{setName},{Vars}]; 
+            
             % Populate RawData table
-            DataBase.RawData{setName,:} = [{DataTable(opt.filter)} {DataSet(opt.filter)} {Vars} {DataSet}];
+            DataBase.RawData{setName,:} = [{DataTable} {DataSet} {Vars} {DataSet}];
             
             % Save raw data for archiving
-            save(string(datetime("today"))+" "+setName +"_Raw","RawTotal")
-            writetable(DataTable,datetime("today")+" "+setName)
-                
+            save(string(datetime("today"))+" "+setName +"_Raw","RawTotal")   
         end
 
-        function RenameSets(DataBase,opt)
+        function RenameSet(DataBase,SetNum, Name)
             arguments
                 DataBase (1,1)
-                opt.Name string = DataBase.Name
-                opt.SetNum double = missing
-                opt.Replace = 0
+                SetNum double 
+                Name string 
             end
-            
-            if isempty(DataBase.Name)
-                disp("Error: Give Name to database or specify name explicitly")
-                return
-            end
-            
-              
 
+              
             % get array of all properties in DataBase
             prop = string(properties(DataBase));
             
-            % if a certain row is specified
-            if ~ismissing(opt.SetNum)
+            % convert row number to set name
+            SetName = string(DataBase.RawData.Properties.RowNames(SetNum));  
 
-                % convert row number to set name
-                opt.SetName = string(DataBase.RawData.Properties.RowNames(opt.SetNum));  
 
-                % loop through all properties
-                for i = 1:numel(prop)
-                    % check if property is a table
-                    if class(DataBase.(prop(i))) == "table"
-                        % loop through all rownames
-                        RowNames = DataBase.(prop(i)).Properties.RowNames;
-                        for k = 1:numel(RowNames)
-                            %compare all rownames to specified row
-                            if any(strcmp(RowNames{k},opt.SetName))
-                                % Append name to the rowname.
-                                if opt.Replace == true
-                                    DataBase.(prop(i)).Properties.RowNames(k) = opt.Name;
-                                else
-                                    DataBase.(prop(i)).Properties.RowNames(k) = opt.Name+" "+ DataBase.(prop(i)).Properties.RowNames(k); 
-                                end
-
-                                
-                            end
-                        end
-                    end
-                end
-                return
-            end
- 
             % loop through all properties
             for i = 1:numel(prop)
-                % exclude any property that is not a table from loop
-                if class(DataBase.(prop(i))) == "table" 
-                   DataBase.(prop(i)).Properties.RowNames = opt.Name+ " " + DataBase.(prop(i)).Properties.RowNames;
+                % check if property is a table
+                if class(DataBase.(prop(i))) ~= "table"
+                    continue
                 end
+
+                % loop through all rownames
+                RowNames = DataBase.(prop(i)).Properties.RowNames;
+                for k = 1:numel(RowNames)
+                    %compare all rownames to Name of specified SetNum
+                    if strcmp(string(RowNames{k}),SetName)
+                        DataBase.(prop(i)).Properties.RowNames(k) = Name;                            
+                    end
+                end
+
             end
+
+
         end
         
         function RemoveSet(DataBase,setNum)
@@ -211,10 +225,46 @@ classdef DataBase < handle
             end
         end
         
+        function ReorderSet(DataBase,From,To)
+
+            arguments
+                DataBase 
+                From double
+                To double
+            end
+            
+            % Throw error if you are moving to within its own set.
+            if any(To == From)
+                Disp("Moving rows within own range is not allowed, please select a destination outside the range of the to be moved rows")
+                return 
+            end
+            
+            % if To is larger then From, subtract the length of From from
+            % To.
+            if any(To > From)
+                To = To - length(From);
+            end
+
+
+            Property = ["DataSets" "Vars" "RawData"];
+
+            for i = 1:numel(Property)
+                
+                % Save rows that require moving in Temp
+                Temp = DataBase.(Property(i))(From,:);
+                % Delete the rows from the property
+                DataBase.(Property(i))(From,:) = [];
+                % restack property using vertcat
+                DataBase.(Property(i)) = [DataBase.(Property(i))(1:To-1,:);  Temp;  DataBase.(Property(i))(To:end,:)];
+                
+            end
+
+        end
+
         function FindIc(DataBase,setNum,opt)
             arguments
                 DataBase (1,1)
-                setNum double = 1:height(DataBase.DataSets)
+                setNum double
                 % Name value
                 opt.Ec double = 100
                 opt.Voltages = DataBase.GetHeaders(setNum,Probe = 'VoltageProbe')
@@ -388,7 +438,7 @@ classdef DataBase < handle
 
         end
         
-        function Plot(DataBase,setNum,opt)
+        function PlotLogLog(DataBase,setNum,opt)
             arguments
                 DataBase
                 setNum double
@@ -451,7 +501,7 @@ classdef DataBase < handle
             arguments
             DataBase
             setNum double
-            opt.Probe string
+            opt.Probe string = "VoltageProbe"
             end
 
             warning('off', 'MATLAB:table:RowsAddedExistingVars');
