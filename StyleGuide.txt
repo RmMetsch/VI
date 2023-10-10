@@ -1,0 +1,45 @@
+To make sure the code does not turn into a spaghetti sauce we need some style guidelines, open a issue if style is not consistent somewhere. 
+
+Please use the following style guide when submitting a pull request,
+
+functions will be lowerCamelCase e.g.
+function myNiceFunction
+	dosomethings
+end
+
+Variables will be lowerCamelCase e.g.
+myCoolVariable = 10;
+
+Structs and its fields will be UpperCase to distinguish them from variables
+VeryNiceStruct.Property = 3
+
+Classes will be lowerCamelCase e.g.
+voltageProbe
+currentProbe
+etc
+
+Class Properties will be UpperCase
+Points
+RawData
+etc
+
+general style guidelines: 
+- avoid overnesting, https://www.youtube.com/watch?v=CFRhGnuXG-4&t=252s , watch this video on how not to nest code, let me know where code is unnecesarily nested.
+- avoid loops in favour of vector oppperations 
+- use consistent white space, 
+  	somecode, othercode	
+	(4 + 4)/(4 - 10)
+	a = 3.1415 
+- Close lines with ;
+- Make sure code is scalable and easy to use. Use constructs as varargin with some if statements to handle complex cases. 
+- Add faulty input warnings using disp at start of function, e.g. 
+	if somethingsIsWrong 
+		disp("you fucked up, change this thing")
+		return
+	end 
+
+
+
+
+
+
